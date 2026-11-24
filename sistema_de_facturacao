@@ -1,0 +1,315 @@
+
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+
+namespace SistemaFaturacao
+{
+    class Produto
+    {
+        public string Nome = "";
+        public int Quantidade;
+        public decimal Preco;
+    }
+
+    class Cliente
+    {
+        public int Numero;
+        public string Nome = "";
+        public string Genero = "";
+        public int Idade;
+        public bool Gravida;
+        public bool Deficiencia;
+
+        public List<Produto> Produtos = new List<Produto>();
+
+        public decimal Total()
+        {
+            decimal total = 0;
+
+            foreach (Produto p in Produtos)
+            {
+                total += p.Quantidade * p.Preco;
+            }
+
+            return total;
+        }
+
+        public decimal Bonus()
+        {
+            if (Total() > 100000)
+                return Total() * 0.10m;
+
+            return 0;
+        }
+    }
+
+    class Program
+    {
+        static List<Cliente> clientes = new List<Cliente>();
+        static int contador = 1;
+
+        static void Main()
+        {
+            int opcao = -1;
+
+            do
+            {
+                Console.Clear();
+
+                Console.WriteLine("==========================================");
+                Console.WriteLine("       SISTEMA DE FACTURACAO");
+                Console.WriteLine("       LOJA DE PRODUTOS ALIMENTARES");
+                Console.WriteLine("==========================================");
+                Console.WriteLine("  1 - Registar compra");
+                Console.WriteLine("  2 - Fila de atendimento");
+                Console.WriteLine("  3 - Consultar facturas");
+                Console.WriteLine("  0 - Sair");
+                Console.WriteLine("==========================================");
+                Console.Write("Escolha uma opcao: ");
+
+                int.TryParse(Console.ReadLine(), out opcao);
+
+                switch (opcao)
+                {
+                    case 1:
+                        RegistarCompra();
+                        break;
+
+                    case 2:
+                        MostrarFila();
+                        break;
+
+                    case 3:
+                        MostrarFacturas();
+                        break;
+
+                    case 0:
+                        Console.WriteLine("\nPrograma encerrado!");
+                        break;
+
+                    default:
+                        Console.WriteLine("\nOpcao invalida!");
+                        break;
+                }
+
+                if (opcao != 0)
+                {
+                    Console.WriteLine("\nPrima ENTER para continuar...");
+                    Console.ReadLine();
+                }
+
+            } while (opcao != 0);
+        }
+
+        static void RegistarCompra()
+        {
+            Console.Clear();
+
+            Cliente c = new Cliente();
+            c.Numero = contador++;
+
+            Console.WriteLine("========== REGISTO DO CLIENTE ==========\n");
+
+            Console.Write("Nome: ");
+            c.Nome = Console.ReadLine() ?? "";
+
+            Console.WriteLine("\nGenero:");
+            Console.WriteLine("1 - Masculino");
+            Console.WriteLine("2 - Feminino");
+            Console.WriteLine("3 - Outro");
+            Console.Write("Escolha: ");
+
+            string genero = Console.ReadLine() ?? "";
+
+            if (genero == "1")
+                c.Genero = "Masculino";
+            else if (genero == "2")
+                c.Genero = "Feminino";
+            else
+                c.Genero = "Outro";
+
+            Console.Write("\nIdade: ");
+            c.Idade = LerInteiro();
+
+            if (c.Genero == "Feminino")
+            {
+                Console.Write("Esta gravida? (S/N): ");
+                c.Gravida = (Console.ReadLine() ?? "").ToUpper() == "S";
+            }
+
+            Console.Write("Pessoa com deficiencia? (S/N): ");
+            c.Deficiencia = (Console.ReadLine() ?? "").ToUpper() == "S";
+
+            Console.Write("\nQuantidade de produtos: ");
+            int quantidade = LerInteiro();
+
+            for (int i = 1; i <= quantidade; i++)
+            {
+                Produto p = new Produto();
+
+                Console.WriteLine("\n--- PRODUTO " + i + " ---");
+
+                Console.Write("Nome: ");
+                p.Nome = Console.ReadLine() ?? "";
+
+                Console.Write("Quantidade: ");
+                p.Quantidade = LerInteiro();
+
+                Console.Write("Preco unitario (Kz): ");
+                p.Preco = LerDecimal();
+
+                c.Produtos.Add(p);
+            }
+
+            clientes.Add(c);
+
+            MostrarFactura(c);
+        }
+
+        static void MostrarFactura(Cliente c)
+        {
+            Console.Clear();
+
+            decimal total = c.Total();
+            decimal bonus = c.Bonus();
+            decimal pagar = total - bonus;
+
+            Console.WriteLine("==================================================");
+            Console.WriteLine("                  FACTURA");
+            Console.WriteLine("==================================================");
+
+            Console.WriteLine("Numero: " + c.Numero);
+            Console.WriteLine("Cliente: " + c.Nome);
+            Console.WriteLine("Genero: " + c.Genero);
+            Console.WriteLine("Idade: " + c.Idade);
+
+            Console.WriteLine("--------------------------------------------------");
+            Console.WriteLine("{0,-18} {1,5} {2,12} {3,12}",
+                "PRODUTO", "QTD", "PRECO", "SUBTOTAL");
+            Console.WriteLine("--------------------------------------------------");
+
+            foreach (Produto p in c.Produtos)
+            {
+                decimal subtotal = p.Quantidade * p.Preco;
+
+                string nome = p.Nome.Length > 18
+                    ? p.Nome.Substring(0, 15) + "..."
+                    : p.Nome;
+
+                Console.WriteLine("{0,-18} {1,5} {2,12:N2} {3,12:N2}",
+                    nome, p.Quantidade, p.Preco, subtotal);
+            }
+
+            Console.WriteLine("--------------------------------------------------");
+            Console.WriteLine("RESUMO FINANCEIRO");
+            Console.WriteLine("--------------------------------------------------");
+            Console.WriteLine("Total das compras:       {0,15:N2} Kz", total);
+            Console.WriteLine("Bonus de 10%:            {0,15:N2} Kz", bonus);
+            Console.WriteLine("--------------------------------------------------");
+            Console.WriteLine("TOTAL A PAGAR:           {0,15:N2} Kz", pagar);
+            Console.WriteLine("==================================================");
+
+            Console.WriteLine("\nINFORMACAO DE ATENDIMENTO");
+
+            if (c.Gravida || c.Idade >= 60 || c.Deficiencia)
+                Console.WriteLine("Prioridade: SIM");
+            else
+                Console.WriteLine("Prioridade: NAO");
+
+            if (bonus > 0)
+                Console.WriteLine("Bonus: Atribuido");
+            else
+                Console.WriteLine("Bonus: Nao atribuido");
+
+            Console.WriteLine("==================================================");
+        }
+
+        static void MostrarFila()
+        {
+            Console.Clear();
+
+            Console.WriteLine("========== FILA DE ATENDIMENTO ==========\n");
+
+            if (clientes.Count == 0)
+            {
+                Console.WriteLine("Nenhum cliente registado.");
+                return;
+            }
+
+            Console.WriteLine("CLIENTES PRIORITARIOS");
+            Console.WriteLine("------------------------------------------");
+
+            foreach (Cliente c in clientes)
+            {
+                if (c.Gravida || c.Idade >= 60 || c.Deficiencia)
+                    Console.WriteLine(c.Numero + " - " + c.Nome);
+            }
+
+            Console.WriteLine("\nCLIENTES NORMAIS");
+            Console.WriteLine("------------------------------------------");
+
+            foreach (Cliente c in clientes)
+            {
+                if (!c.Gravida && c.Idade < 60 && !c.Deficiencia)
+                    Console.WriteLine(c.Numero + " - " + c.Nome);
+            }
+
+            Console.WriteLine("------------------------------------------");
+        }
+
+        static void MostrarFacturas()
+        {
+            Console.Clear();
+
+            Console.WriteLine("========== FACTURAS REGISTADAS ==========\n");
+
+            if (clientes.Count == 0)
+            {
+                Console.WriteLine("Nenhuma factura registada.");
+                return;
+            }
+
+            foreach (Cliente c in clientes)
+            {
+                Console.WriteLine("------------------------------------------");
+                Console.WriteLine("Factura: " + c.Numero);
+                Console.WriteLine("Cliente: " + c.Nome);
+                Console.WriteLine("Total: " + c.Total().ToString("N2") + " Kz");
+                Console.WriteLine("Bonus: " + c.Bonus().ToString("N2") + " Kz");
+                Console.WriteLine("A pagar: " +
+                    (c.Total() - c.Bonus()).ToString("N2") + " Kz");
+            }
+
+            Console.WriteLine("------------------------------------------");
+        }
+
+        static int LerInteiro()
+        {
+            int valor;
+
+            while (!int.TryParse(Console.ReadLine(), out valor) || valor <= 0)
+            {
+                Console.Write("Valor invalido. Tente novamente: ");
+            }
+
+            return valor;
+        }
+
+        static decimal LerDecimal()
+        {
+            decimal valor;
+
+            while (!decimal.TryParse(
+                (Console.ReadLine() ?? "").Replace(',', '.'),
+                NumberStyles.Any,
+                CultureInfo.InvariantCulture,
+                out valor) || valor <= 0)
+            {
+                Console.Write("Preco invalido. Tente novamente: ");
+            }
+
+            return valor;
+        }
+    }
+}
